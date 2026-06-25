@@ -11,7 +11,7 @@ def check_price():
         print("Error: SCRAPER_API_KEY is not set!")
         return
 
-    # Using standard free credits but forcing a real Chrome browser simulation
+    # Using free credits but adding browser=true to pretend we are a real Chrome browser
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
     print("Checking current pricing on Apartments.com using simulated browser...")
@@ -22,8 +22,6 @@ def check_price():
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Let's search the whole page text for pricing clues since layouts can be tricky
     page_text = soup.get_text()
     
     print("--- Webpage Content Analysis ---")
@@ -37,19 +35,17 @@ def check_price():
             price_text = unit_section.get_text(strip=True)
             print(f"Found price data: {price_text}")
         else:
-            # If the specific ID is hidden in JS, let's look for any dollar amounts near '2 Beds'
             print("Looking for general 2-Bedroom pricing indicators...")
             lines = [line.strip() for line in page_text.split('\n') if line.strip()]
             for i, line in enumerate(lines):
                 if "2 Beds" in line or "2bd" in line.lower():
-                    # Print the surrounding lines to find the price
                     start = max(0, i-2)
                     end = min(len(lines), i+5)
                     print("Context found:")
                     print("\n".join(lines[start:end]))
                     break
     elif "Access Denied" in page_text or "Cloudflare" in page_text:
-        print("❌ Still blocked by security layer. Trying backup parsing configuration...")
+        print("❌ Still blocked by the firewall. We will need to try an alternative approach.")
     else:
         print("Loaded page format unknown.")
 
