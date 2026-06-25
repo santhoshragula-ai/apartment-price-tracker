@@ -1,0 +1,28 @@
+name: Hourly Apartment Price Check
+
+on:
+  schedule:
+    # This tells GitHub to run the script automatically at the start of every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # This adds a manual "Play" button so you can test it anytime
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install required tools
+      run: |
+        pip install requests beautifulsoup4
+
+    - name: Run price tracker script
+      env:
+        SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+      run: python tracker.py
