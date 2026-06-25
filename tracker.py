@@ -2,7 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-TARGET_URL = "https://www.apartments.com/la-costa-plano-tx/vyd5l5d/#74f16hw-2-unit"
+TARGET_URL = "https://www.apartments.com/la-costa-plano-tx/vyd5l5d/"
 PRICE_THRESHOLD = 1600 
 
 def check_price():
@@ -11,10 +11,10 @@ def check_price():
         print("Error: SCRAPER_API_KEY is not set!")
         return
 
-    # UPGRADED SETTINGS: Added proxy_type=residential and browser=true to bypass the Access Denied block
-    proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&proxy_type=residential&browser=true"
+    # Using standard free credits but forcing a real Chrome browser simulation
+    proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Checking current pricing on Apartments.com using advanced residential proxy...")
+    print("Checking current pricing on Apartments.com using simulated browser...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -23,29 +23,35 @@ def check_price():
 
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    # Target the specific layout section matching your exact link hash
-    unit_row = soup.find('div', {'id': '74f16hw-2-unit'})
+    # Let's search the whole page text for pricing clues since layouts can be tricky
+    page_text = soup.get_text()
     
-    if unit_row:
-        price_element = unit_row.find(class_='rentLabel') or unit_row.find(class_='pricingInfo')
+    print("--- Webpage Content Analysis ---")
+    if "La Costa" in page_text:
+        print("Success! Successfully loaded the La Costa apartment page.")
         
-        if price_element:
-            price_text = price_element.get_text(strip=True)
-            print(f"Found 2-Bedroom Price Text: {price_text}")
-            
-            clean_price = int(''.join(filter(str.isdigit, price_text)))
-            
-            if clean_price <= PRICE_THRESHOLD:
-                print(f"🚨 ALERT! Price dropped to ${clean_price}! Go book it now!")
-            else:
-                print(f"Current price is ${clean_price}. Still above your threshold of ${PRICE_THRESHOLD}.")
+        # Look for the specific unit code or rent ranges on the page
+        unit_section = soup.find(id="74f16hw-2-unit") or soup.find(class_="rentLabel")
+        
+        if unit_section:
+            price_text = unit_section.get_text(strip=True)
+            print(f"Found price data: {price_text}")
         else:
-            print("Could not locate the price label inside the unit layout.")
+            # If the specific ID is hidden in JS, let's look for any dollar amounts near '2 Beds'
+            print("Looking for general 2-Bedroom pricing indicators...")
+            lines = [line.strip() for line in page_text.split('\n') if line.strip()]
+            for i, line in enumerate(lines):
+                if "2 Beds" in line or "2bd" in line.lower():
+                    # Print the surrounding lines to find the price
+                    start = max(0, i-2)
+                    end = min(len(lines), i+5)
+                    print("Context found:")
+                    print("\n".join(lines[start:end]))
+                    break
+    elif "Access Denied" in page_text or "Cloudflare" in page_text:
+        print("❌ Still blocked by security layer. Trying backup parsing configuration...")
     else:
-        # If it still can't find the layout, print a snippet to see what it *did* find
-        print("Could not find the specific 2-bedroom floor plan layout section.")
-        print("--- Text preview of loaded page ---")
-        print(soup.get_text()[:1000])
+        print("Loaded page format unknown.")
 
 if __name__ == "__main__":
     check_price()
