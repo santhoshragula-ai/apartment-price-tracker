@@ -13,7 +13,7 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Connecting to live data stream...")
+    print("Connecting to live RentCafe data stream...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -25,21 +25,23 @@ def check_price():
     
     print("\n====== TARGET UNIT WATCH ======")
     
-    # Target the exact sequence for unit 3025 found in your previous working log
-    pattern = r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)"
-    match = re.search(pattern, raw_text)
-    
-    if match:
-        print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
-    else:
-        # Flexible context fallback if spacing inside the single-line string shifts
-        fallback_pattern = r"(3025.*?Apply now)"
-        fallback_match = re.search(fallback_pattern, raw_text)
-        if fallback_match:
-            print(f"🎯 Unit 3025 Context: {fallback_match.group(1)}")
+    # Clean check if the flat number exists anywhere in the text block
+    if "3025" in raw_text:
+        print("Found Unit 3025! Extracting pricing data...")
+        # Target the price directly following the unit number
+        pattern = r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)"
+        match = re.search(pattern, raw_text)
+        if match:
+            print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
         else:
-            print("❌ Unit 3025 was not found in this data pull. Checking raw sample:")
-            print(raw_text[:500])
+            # Fallback text slice around the unit to see how it's formatted
+            start = max(0, raw_text.find("3025") - 50)
+            end = min(len(raw_text), raw_text.find("3025") + 150)
+            print(f"🎯 Unit 3025 Snippet: ... {raw_text[start:end]} ...")
+    else:
+        print("❌ Unit 3025 was not found in the raw text stream.")
+        print("Printing a sample of the raw text response:")
+        print(raw_text[:1000])
 
 if __name__ == "__main__":
     check_price()
