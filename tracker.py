@@ -12,32 +12,33 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Connecting to live data hub...")
+    print("Connecting directly to the pricing grid...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
-        print(f"Connection failed: {response.status_code}")
+        print(f"Failed to fetch data. Status code: {response.status_code}")
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
     
-    print("====== LIVE LA COSTA PRICING ======\n")
-    # RentCafe uses specific data attributes for floor plan tables
-    tables = soup.find_all('table') or soup.find_all('div', class_='fp-container')
+    print("\n====== ALL DETECTED TABLES ON PAGE ======")
+    tables = soup.find_all('table')
     
-    found = False
-    for item in tables:
-        text = item.get_text(" | ", strip=True)
-        if "2 Beds" in text or "2 Bed" in text:
-            print(text)
-            found = True
-            
-    if not found:
-        # Fallback: Just print lines containing dollar signs to find the price directly
-        lines = [line.strip() for line in soup.get_text().split('\n') if line.strip()]
-        for line in lines:
-            if "$" in line and ("Bed" in line or "B1" in line or "B2" in line):
-                print(f"👉 {line}")
+    if tables:
+        for index, table in enumerate(tables):
+            table_text = table.get_text(" | ", strip=True)
+            # If this table contains floor plan info, dump the entire thing cleanly
+            if "Bed" in table_text or "Baths" in table_text:
+                print(f"\n[Table #{index + 1} Content]:")
+                print(table_text)
+    else:
+        print("No standard HTML tables found. Scanning fallback layout containers...")
+        # Fallback for div-based grids
+        for container in soup.find_all('div', class_=lambda c: c and ('fp' in c or 'plan' in c or 'unit' in c)):
+            container_text = container.get_text(" | ", strip=True)
+            if "2 Bed" in container_text:
+                print(f"\n[Grid Block Content]:")
+                print(container_text[:500])
 
 if __name__ == "__main__":
     check_price()
