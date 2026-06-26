@@ -24,22 +24,24 @@ def check_price():
     
     print("--- Webpage Content Analysis ---")
     if "La Costa" in page_text:
-        print("Success! Verified La Costa page loaded smoothly.")
+        print("Success! Verified La Costa page loaded smoothly.\n")
         
         lines = [line.strip() for line in page_text.split('\n') if line.strip()]
         
+        print("====== REAL-TIME 2-BEDROOM PRICE MATRIX ======")
+        # Look for the specific floor plan variants B1, B2, B3, B4 on the page
         for i, line in enumerate(lines):
-            # Look for the row that specifies 2 Bedrooms
-            if "2 Beds" in line or "2bd" in line.lower():
-                print("\n🎉 TARGET SECTION LOCATED:")
-                # Print a block of lines to capture both layout labels and actual numbers
-                start = max(0, i)
-                end = min(len(lines), i + 5)
-                for index in range(start, end):
-                    print(f"👉 Line data: {lines[index]}")
-                break
+            if line in ["B1", "B2", "B3", "B4"]:
+                # Print out the layout model name and the next few rows containing prices
+                print(f"🏠 Floor Plan Model: {line}")
+                end_index = min(len(lines), i + 6)
+                for index in range(i + 1, end_index):
+                    # Filter out useless buttons or empty text tags
+                    if "$" in lines[index] or "Available" in lines[index]:
+                        print(f"   👉 Data: {lines[index]}")
+                print("-" * 30)
     else:
-        print("❌ Property confirmation failed on layout.")
+        print("❌ Property layout format verification failed.")
 
 if __name__ == "__main__":
     check_price()
