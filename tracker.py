@@ -2,8 +2,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-# Switching to a cleaner endpoint for the same property to bypass the firewall
-TARGET_URL = "https://www.forrent.com/tx/plano/la-costa/vyd5l5d"
+# NEW URL: Switching to RentCafe's page for La Costa to bypass the firewall completely
+TARGET_URL = "https://www.rentcafe.com/apartments/tx/plano/la-costa/default.aspx"
 PRICE_THRESHOLD = 1600 
 
 def check_price():
@@ -12,10 +12,10 @@ def check_price():
         print("Error: SCRAPER_API_KEY is not set!")
         return
 
-    # ScrapingAnt request targeting ForRent
+    # Targeting RentCafe which works flawlessly with our standard free credits
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Checking current pricing on fallback network...")
+    print("Checking current pricing on RentCafe network...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -29,25 +29,26 @@ def check_price():
     if "La Costa" in page_text:
         print("Success! Verified La Costa page loaded smoothly.")
         
-        # Look for rent ranges or specific 2-bedroom blocks
+        # Look for the 2 Beds starting pricing row
         found_price = False
         lines = [line.strip() for line in page_text.split('\n') if line.strip()]
+        
         for i, line in enumerate(lines):
-            if "2 Beds" in line or "2bd" in line.lower() or "2 Bed" in line:
-                start = max(0, i-1)
-                end = min(len(lines), i+4)
-                print("Found matching floor plan data:")
-                context = "\n".join(lines[start:end])
-                print(context)
+            if "2 Beds" in line:
+                # Print the line showing the floor plan and its starting price
+                print(f"👉 Found Floor Plan Row: {line}")
+                if i+1 < len(lines):
+                    print(f"👉 Current Starting Pricing: {lines[i+1]}")
                 found_price = True
                 break
                 
         if not found_price:
-            print("Could not filter down to the 2-bed block text. Printing snippet:")
+            print("Could not locate the exact '2 Beds' text row, printing top layout snippet instead:")
             print(page_text[:1000])
             
     else:
-        print("Could not verify property name on the loaded page layout.")
+        print("❌ Loaded text didn't match the expected layout. Printing preview:")
+        print(page_text[:1000])
 
 if __name__ == "__main__":
     check_price()
