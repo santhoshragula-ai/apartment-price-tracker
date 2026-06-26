@@ -22,23 +22,23 @@ def check_price():
     soup = BeautifulSoup(response.text, 'html.parser')
     page_text = soup.get_text()
     
-    print("\n====== SEARCHING ALL TEXT BLOCKS ======")
+    print("\n====== SEARCHING ALL RAW TEXT BLOCKS ======")
     lines = [line.strip() for line in page_text.split('\n') if line.strip()]
     
     found = False
     for i, line in enumerate(lines):
-        # Scan for any line that lists a 2-Bedroom layout variant or text
+        # Look for the exact apartment footprint variants or 2 Bed markers
         if "2 Bed" in line or "2Beds" in line or "B1" in line or "B2" in line:
             print(f"\n📍 Match found on Line {i}: {line}")
-            # Print the next 6 lines of text following the match to display the raw price
-            end_index = min(len(lines), i + 7)
+            # Print the next 8 lines immediately following the match to expose the dynamic price text
+            end_index = min(len(lines), i + 9)
             for index in range(i + 1, end_index):
                 print(f"   👉 {lines[index]}")
             found = True
             
     if not found:
-        print("No direct layout keywords found. Printing top 500 characters of page content:")
-        print(page_text[:500])
+        print("No direct floor plan keywords found. Printing top 1000 characters of page content:")
+        print(page_text[:1000])
 
 if __name__ == "__main__":
     check_price()
