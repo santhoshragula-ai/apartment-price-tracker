@@ -13,7 +13,7 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Connecting to La Costa pricing data...")
+    print("Fetching live data...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -23,21 +23,22 @@ def check_price():
     soup = BeautifulSoup(response.text, 'html.parser')
     raw_text = soup.get_text(" ", strip=True)
     
-    print("\n====== REAL-TIME 2-BEDROOM PRICES ======")
+    print("\n====== TARGET UNIT WATCH ======")
     
-    # This regular expression locks onto the models (B1, B2, B3, B4) and extracts their specific details
-    models = ["B1", "B2", "B3", "B4"]
-    for model in models:
-        pattern = rf"({model}\s+2\s+Beds\s+/\s+2\s+Baths\s+/\s+[\d,]+\s+Sqft\s+\$[\d,]+\s+-\s+\$[\d,]+)"
-        match = re.search(pattern, raw_text)
-        if match:
-            print(f"🏠 Model {match.group(1)}")
+    # Target exactly the text layout following unit 3025
+    pattern = r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)"
+    match = re.search(pattern, raw_text)
+    
+    if match:
+        print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
+    else:
+        # Fallback to display the context around 3025 if the string shifts slightly
+        fallback_pattern = r"(3025.*?Apply now)"
+        fallback_match = re.search(fallback_pattern, raw_text)
+        if fallback_match:
+            print(f"🎯 Unit 3025 Status: {fallback_match.group(1)}")
         else:
-            # Fallback: simpler match if layout shifts slightly
-            fallback_pattern = rf"({model}\s+2\s+Beds.*?\$[\d,]+\s+-\s+\$[\d,]+)"
-            fallback_match = re.search(fallback_pattern, raw_text)
-            if fallback_match:
-                print(f"🏠 Model {fallback_match.group(1)}")
+            print("❌ Could not find Unit 3025 in the current text pull.")
 
 if __name__ == "__main__":
     check_price()
