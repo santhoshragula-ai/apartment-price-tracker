@@ -12,36 +12,32 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Checking current pricing on RentCafe network...")
+    print("Connecting to live data hub...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
-        print(f"Failed to fetch data. Status code: {response.status_code}")
+        print(f"Connection failed: {response.status_code}")
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    page_text = soup.get_text()
     
-    print("--- Webpage Content Analysis ---")
-    if "La Costa" in page_text:
-        print("Success! Verified La Costa page loaded smoothly.\n")
-        
-        lines = [line.strip() for line in page_text.split('\n') if line.strip()]
-        
-        print("====== REAL-TIME 2-BEDROOM PRICE MATRIX ======")
-        # Look for the specific floor plan variants B1, B2, B3, B4 on the page
-        for i, line in enumerate(lines):
-            if line in ["B1", "B2", "B3", "B4"]:
-                # Print out the layout model name and the next few rows containing prices
-                print(f"🏠 Floor Plan Model: {line}")
-                end_index = min(len(lines), i + 6)
-                for index in range(i + 1, end_index):
-                    # Filter out useless buttons or empty text tags
-                    if "$" in lines[index] or "Available" in lines[index]:
-                        print(f"   👉 Data: {lines[index]}")
-                print("-" * 30)
-    else:
-        print("❌ Property layout format verification failed.")
+    print("====== LIVE LA COSTA PRICING ======\n")
+    # RentCafe uses specific data attributes for floor plan tables
+    tables = soup.find_all('table') or soup.find_all('div', class_='fp-container')
+    
+    found = False
+    for item in tables:
+        text = item.get_text(" | ", strip=True)
+        if "2 Beds" in text or "2 Bed" in text:
+            print(text)
+            found = True
+            
+    if not found:
+        # Fallback: Just print lines containing dollar signs to find the price directly
+        lines = [line.strip() for line in soup.get_text().split('\n') if line.strip()]
+        for line in lines:
+            if "$" in line and ("Bed" in line or "B1" in line or "B2" in line):
+                print(f"👉 {line}")
 
 if __name__ == "__main__":
     check_price()
