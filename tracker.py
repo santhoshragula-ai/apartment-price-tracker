@@ -13,7 +13,7 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Fetching live data...")
+    print("Connecting to live data stream...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -25,20 +25,21 @@ def check_price():
     
     print("\n====== TARGET UNIT WATCH ======")
     
-    # Target exactly the text layout following unit 3025
+    # Target the exact sequence for unit 3025 found in your previous working log
     pattern = r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)"
     match = re.search(pattern, raw_text)
     
     if match:
         print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
     else:
-        # Fallback to display the context around 3025 if the string shifts slightly
+        # Flexible context fallback if spacing inside the single-line string shifts
         fallback_pattern = r"(3025.*?Apply now)"
         fallback_match = re.search(fallback_pattern, raw_text)
         if fallback_match:
-            print(f"🎯 Unit 3025 Status: {fallback_match.group(1)}")
+            print(f"🎯 Unit 3025 Context: {fallback_match.group(1)}")
         else:
-            print("❌ Could not find Unit 3025 in the current text pull.")
+            print("❌ Unit 3025 was not found in this data pull. Checking raw sample:")
+            print(raw_text[:500])
 
 if __name__ == "__main__":
     check_price()
