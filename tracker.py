@@ -20,25 +20,25 @@ def check_price():
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
+    page_text = soup.get_text()
     
-    print("\n====== ALL DETECTED TABLES ON PAGE ======")
-    tables = soup.find_all('table')
+    print("\n====== SEARCHING ALL TEXT BLOCKS ======")
+    lines = [line.strip() for line in page_text.split('\n') if line.strip()]
     
-    if tables:
-        for index, table in enumerate(tables):
-            table_text = table.get_text(" | ", strip=True)
-            # If this table contains floor plan info, dump the entire thing cleanly
-            if "Bed" in table_text or "Baths" in table_text:
-                print(f"\n[Table #{index + 1} Content]:")
-                print(table_text)
-    else:
-        print("No standard HTML tables found. Scanning fallback layout containers...")
-        # Fallback for div-based grids
-        for container in soup.find_all('div', class_=lambda c: c and ('fp' in c or 'plan' in c or 'unit' in c)):
-            container_text = container.get_text(" | ", strip=True)
-            if "2 Bed" in container_text:
-                print(f"\n[Grid Block Content]:")
-                print(container_text[:500])
+    found = False
+    for i, line in enumerate(lines):
+        # Scan for any line that lists a 2-Bedroom layout variant or text
+        if "2 Bed" in line or "2Beds" in line or "B1" in line or "B2" in line:
+            print(f"\n📍 Match found on Line {i}: {line}")
+            # Print the next 6 lines of text following the match to display the raw price
+            end_index = min(len(lines), i + 7)
+            for index in range(i + 1, end_index):
+                print(f"   👉 {lines[index]}")
+            found = True
+            
+    if not found:
+        print("No direct layout keywords found. Printing top 500 characters of page content:")
+        print(page_text[:500])
 
 if __name__ == "__main__":
     check_price()
