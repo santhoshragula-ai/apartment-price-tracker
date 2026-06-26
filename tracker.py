@@ -13,7 +13,7 @@ def check_price():
 
     proxy_url = f"https://api.scrapingant.com/v2/general?url={TARGET_URL}&x-api-key={api_key}&browser=true"
     
-    print("Connecting to live RentCafe data stream...")
+    print("Connecting to live data stream...")
     response = requests.get(proxy_url)
     
     if response.status_code != 200:
@@ -25,23 +25,23 @@ def check_price():
     
     print("\n====== TARGET UNIT WATCH ======")
     
-    # Clean check if the flat number exists anywhere in the text block
-    if "3025" in raw_text:
-        print("Found Unit 3025! Extracting pricing data...")
-        # Target the price directly following the unit number
-        pattern = r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)"
-        match = re.search(pattern, raw_text)
-        if match:
-            print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
-        else:
-            # Fallback text slice around the unit to see how it's formatted
-            start = max(0, raw_text.find("3025") - 50)
-            end = min(len(raw_text), raw_text.find("3025") + 150)
-            print(f"🎯 Unit 3025 Snippet: ... {raw_text[start:end]} ...")
+    # Safely search for unit 3025 without triggering an AttributeError
+    match = re.search(r"3025\s+(\$[\d,]+\s+-\s+\$[\d,]+)", raw_text)
+    
+    if match:
+        print(f"🎯 Unit 3025 Current Price: {match.group(1)}")
+    elif "3025" in raw_text:
+        idx = raw_text.find("3025")
+        print("Found Unit 3025 reference, but layout format shifted.")
+        print(f"Context: {raw_text[max(0, idx-40):min(len(raw_text), idx+100)]}")
     else:
-        print("❌ Unit 3025 was not found in the raw text stream.")
-        print("Printing a sample of the raw text response:")
-        print(raw_text[:1000])
+        print("🔍 Unit 3025 is not currently visible in the page text stream.")
+        print("The individual unit table hasn't fully expanded. Pulling general B1 floor plan data as reference:")
+        
+        # Safe fallback so you can see the base tier pricing
+        b1_match = re.search(r"B1\s+2\s+Beds.*?(\$[\d,]+\s+-\s+\$[\d,]+)", raw_text)
+        if b1_match:
+            print(f"🏠 General B1 Price Range: {b1_match.group(1)}")
 
 if __name__ == "__main__":
     check_price()
